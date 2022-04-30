@@ -1,0 +1,16 @@
+version: '3.7'
+
+services:
+  semaf-service:
+    container_name: semaf
+    build: .
+    ports:
+      # The HTTP port
+      - "8089:80"
+    networks:
+      - traefik
+
+networks:
+  traefik:
+    external: true
+

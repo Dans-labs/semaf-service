@@ -2,7 +2,7 @@ connexion == 2.4.0
 git+https://github.com/Dans-labs/semaf-client@cmdi
 rdflib
 numpy
-pandas
+#pandas
 bs4
 bs2json
 python_dateutil == 2.6.0

@@ -1,16 +1,15 @@
 connexion == 2.4.0
 git+https://github.com/Dans-labs/semaf-client@cmdi
 rdflib
-numpy
-#pandas
+#numpy
 bs4
 bs2json
-python_dateutil == 2.6.0
+python_dateutil >= 2.8.1
 setuptools >= 21.0.0
 pymongo
 elasticsearch
 pyDataverse == 0.2.1
-#pandas
+pandas==1.4.0
 aiofiles
 jinja2
 python-multipart

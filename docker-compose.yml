@@ -9,6 +9,9 @@ services:
       - "8089:80"
     networks:
       - traefik
+    volumes:
+      - ${datadir}:/data
+      - ./config.py:/usr/src/app/config.py
 
 networks:
   traefik:

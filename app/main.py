@@ -11,6 +11,11 @@ from starlette.staticfiles import StaticFiles
 from fastapi.openapi.utils import get_openapi
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
+from Semaf.SchemaLOD import Schema, GraphBuilder
+from Semaf.SemafCLI import SemafUtils
+from config import default_crosswalks_location, crosswalks_location, cbs_default_crosswalks
+from config import cmdifile, ROOT, DATAVERSE_ID, API_TOKEN, schemaURL, cv_server, cwfile
+from Semaf.Semaf import Semaf
 import shutil
 import xml.etree.ElementTree as ET
 import requests
@@ -39,9 +44,9 @@ def custom_openapi():
 
 tags_metadata = [
     {
-        "name": "country",
+        "name": "semaf",
         "externalDocs": {
-            "description": "Put this citation in working papers and published papers that use this dataset",
+            "description": "Semantic mappings framework (SEMAF) endpoint",
             "authors": 'Slava Tykhonov',
             "url": "https://dans.knaw.nl/en",
         },
@@ -49,7 +54,7 @@ tags_metadata = [
     {
         "name": "transformer",
         "externalDocs": {
-            "description": "Endpoint to transform metadata",
+            "description": "Endpoint to transform metadata with XSLT",
             "authors": 'Slava Tykhonov'
         },
     }
@@ -78,6 +83,31 @@ http = urllib3.PoolManager()
 def search(request: Request):
     input = request.query_params
     return 'hello'
+
+@app.post("/semaf", tags=["semaf"])
+def semafservice(file: UploadFile = File(...,description="Upload file"), default_mappings_url:str = Form(...,description="Default template for mappings"), semaf_mappings_url:str = Form(...,description="Semantic mappings url")):
+
+    default_crosswalks = '' #cbs_default_crosswalks #''
+    crosswalks_location = '' #crosswalks_location #''
+    if default_mappings_url:
+        r = requests.get(default_mappings_url)
+        default_mappings_location = "/tmp/default_template.csv"
+        open(default_mappings_location, 'wb').write(r.content)
+        default_crosswalks = default_mappings_location
+    if semaf_mappings_url:
+        r = requests.get(semaf_mappings_url)
+        semaf_mappings_location = "/tmp/semaf-mappings.csv"
+        open(semaf_mappings_location, 'wb').write(r.content)
+        crosswalks_location = semaf_mappings_location 
+
+    file_location = f"/tmp/{file.filename}"
+    with open(file_location, "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
+
+    semafcli = SemafUtils(default_crosswalks, crosswalks_location)
+    semafcli.set_dataverse(ROOT, DATAVERSE_ID, API_TOKEN)
+    jsonld = semafcli.transformation(file_location)
+    return jsonld
 
 @app.post("/tranform", tags=["tranformer"])
 #dv_target, api_token, xsl_url, author_name, author_affiliation, contact_name, contact_email, subject

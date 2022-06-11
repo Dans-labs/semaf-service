@@ -13,6 +13,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
 from Semaf.SchemaLOD import Schema, GraphBuilder
 from Semaf.SemafCLI import SemafUtils
+from typing import Union
 from config import default_crosswalks_location, crosswalks_location, cbs_default_crosswalks
 from config import cmdifile, ROOT, DATAVERSE_ID, API_TOKEN, schemaURL, cv_server, cwfile
 from Semaf.Semaf import Semaf
@@ -85,8 +86,9 @@ def search(request: Request):
     return 'hello'
 
 @app.post("/semaf", tags=["semaf"])
-def semafservice(file: UploadFile = File(...,description="Upload file"), default_mappings_url:str = Form(...,description="Default template for mappings"), semaf_mappings_url:str = Form(...,description="Semantic mappings url")):
-
+def semafservice(file: UploadFile = File(...,description="Upload file"), default_mappings_url:str = Form(...,description="Default template for mappings"), semaf_mappings_url:str = Form(...,description="Semantic mappings url"), dataverseURL: Union[str, None] = None, dataverseToken: Union[str, None] = None, subdataverseName: Union[str, None] = None, deposit: bool = False): 
+    # Reserved for python 3.10
+    # dataverseURL: str | None = None, dataverseToken: str | None = None, subdataverseName: str | None = None, deposit: bool = False):
     default_crosswalks = '' #cbs_default_crosswalks #''
     crosswalks_location = '' #crosswalks_location #''
     if default_mappings_url:
@@ -105,8 +107,9 @@ def semafservice(file: UploadFile = File(...,description="Upload file"), default
         shutil.copyfileobj(file.file, buffer)
 
     semafcli = SemafUtils(default_crosswalks, crosswalks_location)
-    semafcli.set_dataverse(ROOT, DATAVERSE_ID, API_TOKEN)
-    jsonld = semafcli.transformation(file_location)
+    if deposit:
+        semafcli.set_dataverse(dataverseURL, subdataverseName, dataverseToken)
+    jsonld = semafcli.transformation(file_location, deposit)
     return jsonld
 
 @app.post("/tranform", tags=["tranformer"])

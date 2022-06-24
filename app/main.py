@@ -86,7 +86,7 @@ def search(request: Request):
     return 'hello'
 
 @app.post("/semaf", tags=["semaf"])
-def semafservice(file: UploadFile = File(...,description="Upload file"), default_mappings_url:str = Form(...,description="Default template for mappings"), semaf_mappings_url:str = Form(...,description="Semantic mappings url"), dataverseURL: Union[str, None] = None, dataverseToken: Union[str, None] = None, subdataverseName: Union[str, None] = None, deposit: bool = False): 
+def semafservice(file: UploadFile = File(...,description="Upload file"), default_mappings_url:str = Form(...,description="Default template for mappings"), semaf_mappings_url:str = Form(...,description="Semantic mappings url"), dataverseURL: Union[str, None] = None, dataverseToken: Union[str, None] = None, subdataverseName: Union[str, None] = None, deposit: bool = False, semantic: bool = True): 
     # Reserved for python 3.10
     # dataverseURL: str | None = None, dataverseToken: str | None = None, subdataverseName: str | None = None, deposit: bool = False):
     default_crosswalks = '' #cbs_default_crosswalks #''
@@ -108,14 +108,18 @@ def semafservice(file: UploadFile = File(...,description="Upload file"), default
 
     semafcli = SemafUtils(default_crosswalks, crosswalks_location)
     if deposit:
+        if semantic:
+            semafcli.set_deposit_type('semantic')
+        else:
+            semafcli.set_deposit_type('original')
         semafcli.set_dataverse(dataverseURL, subdataverseName, dataverseToken)
     jsonld = semafcli.transformation(file_location, deposit)
-    return jsonld
+    return semafcli.cmdigraph.dataset
 
-@app.post("/tranform", tags=["tranformer"])
+@app.post("/transform", tags=["tranformer"])
 #dv_target, api_token, xsl_url, author_name, author_affiliation, contact_name, contact_email, subject
 #def namespace(dv_target: str, api_token: str, xsl_url:str, file: UploadFile = File(...,description="Upload file"), request: Request):
-def namespace(file: UploadFile = File(...,description="Upload file"), dataverse: str = Form(...,description="Dataverse"), dv_target: str = Form(...,description="Subdataverse"), api_token: str = Form(...,description="API Token"), xsl_url:str = Form(...,description="XSLT mapping")):    
+def transform(file: UploadFile = File(...,description="Upload file"), dataverse: str = Form(...,description="Dataverse"), dv_target: str = Form(...,description="Subdataverse"), api_token: str = Form(...,description="API Token"), xsl_url:str = Form(...,description="XSLT mapping")):    
     artnamespace = {}
     file_location = f"/tmp/{file.filename}"
     r = requests.get(xsl_url)
